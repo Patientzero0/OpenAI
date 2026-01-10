@@ -18,6 +18,10 @@ yarn-error.log*
 
 
 .env
+.env.*
+node_modules
+dist
+__pycache__
 
 # vercel
 .vercel
