@@ -628,15 +628,20 @@ export function MarketingDashboard() {
                 </div>
                 <div className="flex items-end">
                   <Button className="w-full" onClick={async () => {
+                    if (!campaignAudience.trim() || !campaignTone.trim() || !campaignBudget.trim()) {
+                      alert("Please fill in all fields: Audience, Tone, and Budget");
+                      return;
+                    }
+                    
                     setIsGeneratingCampaigns(true)
                     setGeneratedCampaigns([])
                     try {
-                      const res = await fetch('/api/generate-campaign-suggestions', {
+                      const res = await fetch('http://localhost:8000/api/generate-campaign-suggestions', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                           platform: selectedPlatform || 'whatsapp',
-                          product_name: productName,
+                          product_name: productName || 'Your Product',
                           audience: campaignAudience,
                           tone: campaignTone,
                           budget: campaignBudget,
@@ -647,7 +652,15 @@ export function MarketingDashboard() {
                       if (res.ok) {
                         const json = await res.json()
                         if (json.suggestions && Array.isArray(json.suggestions)) {
-                          setGeneratedCampaigns(json.suggestions)
+                          // Transform the AI suggestions into a format compatible with display
+                          const transformedSuggestions = json.suggestions.map((suggestion: any, index: number) => ({
+                            type: ['whatsapp', 'instagram', 'facebook'][index % 3],
+                            title: suggestion.title || `Campaign ${index + 1}`,
+                            content: suggestion.content || suggestion,
+                            engagement: ['High', 'Medium', 'High'][index % 3],
+                            estimatedReach: `${1500 + (index * 800)}+`,
+                          }))
+                          setGeneratedCampaigns(transformedSuggestions)
                         } else {
                           setGeneratedCampaigns(campaignSuggestions)
                         }
@@ -660,7 +673,7 @@ export function MarketingDashboard() {
                     } finally {
                       setIsGeneratingCampaigns(false)
                     }
-                  }}>
+                  }} disabled={isGeneratingCampaigns}>
                     {isGeneratingCampaigns ? 'Generating...' : 'Generate Campaigns'}
                   </Button>
                 </div>

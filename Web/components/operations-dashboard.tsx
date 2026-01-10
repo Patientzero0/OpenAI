@@ -166,6 +166,35 @@ export function OperationsDashboard() {
   const [isLoadingInsight, setIsLoadingInsight] = useState(false);
   const [insightQuestion, setInsightQuestion] = useState("Provide a summary of the operational health and recommendations.");
 
+  // Handle AI Operations Insights generation
+  const handleGenerateInsight = async () => {
+    setIsLoadingInsight(true);
+    setOperationsInsight("");
+    try {
+      const response = await fetch("http://localhost:8000/api/generate-operations-insight", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          data: {
+            inventoryData: inventory,
+            supplierPerformance: suppliers,
+            employeeData: employees,
+            monthlyOperations,
+            deliveryStatus,
+            recentAlerts: alerts,
+          },
+          question: insightQuestion,
+        }),
+      });
+      const result = await response.json();
+      setOperationsInsight(result.insight);
+    } catch (error) {
+      setOperationsInsight("Failed to fetch operations insight. Please ensure the backend is running.");
+    } finally {
+      setIsLoadingInsight(false);
+    }
+  };
+
   // Handle inventory current level update
   const handleInventoryCurrentChange = (index: number, newCurrent: number) => {
     const item = inventory[index]
@@ -899,15 +928,12 @@ export function OperationsDashboard() {
                       </div>
                     </div>
                   </div>
-                  <Button size="sm" variant="outline" onClick={() => handleAlertAction(alert.id)}>
-                    {handlingAlertId === alert.id ? 'Processing...' : alert.action}
-                  </Button>
                 </div>
               </div>
             ))}
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+          </CardContent>
+        </Card>
 
       {/* AI Operations Insights */}
       <Card>
@@ -916,21 +942,28 @@ export function OperationsDashboard() {
             <Brain className="h-5 w-5 text-primary" />
             <span>AI Operations Insights</span>
           </CardTitle>
-          <CardDescription>Intelligent recommendations for operational efficiency</CardDescription>
+          <CardDescription>Ask a question to get real-time analysis of your operations data.</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {isLoadingInsight ? (
-              <div className="flex items-center space-x-2 text-blue-700 animate-pulse">
-                <Wand className="h-4 w-4 animate-spin" />
-                <span>Generating AI insights...</span>
-              </div>
-            ) : (
-              <div className="whitespace-pre-line text-sm text-gray-800 dark:text-gray-200">
-                {operationsInsight}
-              </div>
-            )}
+        <CardContent className="space-y-4">
+          <div className="flex space-x-2">
+            <Input
+              placeholder="e.g., 'What are the key operational bottlenecks?'"
+              value={insightQuestion}
+              onChange={(e) => setInsightQuestion(e.target.value)}
+            />
+            <Button onClick={handleGenerateInsight} disabled={isLoadingInsight}>
+              {isLoadingInsight ? "..." : "Ask"}
+            </Button>
           </div>
+          {operationsInsight && (
+            <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200">
+              <CardContent className="pt-4">
+                <p className="text-sm text-blue-700 dark:text-blue-300 whitespace-pre-wrap">
+                  {operationsInsight}
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </CardContent>
       </Card>
     </div>
