@@ -1,7 +1,7 @@
 
 from fastapi import FastAPI
 from pydantic import BaseModel
-from services.financial_analysis import get_financial_insight, analyze_what_if_scenario
+from agents.financial_analysis import get_financial_insight, analyze_what_if_scenario
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
