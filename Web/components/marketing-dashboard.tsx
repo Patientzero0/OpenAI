@@ -21,6 +21,7 @@ import {
   ThumbsUp,
   ThumbsDown,
   Zap,
+  Wand,
 } from "lucide-react"
 import {
   XAxis,
@@ -34,7 +35,7 @@ import {
   AreaChart,
   Area,
 } from "recharts"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 import { Input } from "@/components/ui/input"
 
@@ -138,10 +139,79 @@ export function MarketingDashboard() {
   const [generatedImage, setGeneratedImage] = useState("")
   const [isGeneratingImage, setIsGeneratingImage] = useState(false)
 
+  // AI Marketing Insights State
+  const [marketingInsight, setMarketingInsight] = useState("")
+  const [isLoadingInsight, setIsLoadingInsight] = useState(false)
+  const [insightQuestion, setInsightQuestion] = useState("")
+
   const totalReach = 5400
   const totalEngagement = 1250
   const conversionRate = 4.2
   const avgSentiment = 4.3
+
+  // Handle AI Marketing Insights generation
+  const handleGenerateInsight = async () => {
+    setIsLoadingInsight(true)
+    setMarketingInsight("")
+    try {
+      const response = await fetch("http://localhost:8000/api/generate-marketing-insight", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          data: {
+            campaignPerformance,
+            keywordTrends,
+            recentReviews,
+            campaignSuggestions,
+            totalReach,
+            totalEngagement,
+            conversionRate,
+            avgSentiment,
+          },
+          question: insightQuestion,
+        }),
+      })
+      const result = await response.json()
+      setMarketingInsight(result.insight)
+    } catch (error) {
+      setMarketingInsight("Failed to fetch analysis. Please ensure the backend is running.")
+    } finally {
+      setIsLoadingInsight(false)
+    }
+  }
+
+  // Fetch initial insight on component mount
+  useEffect(() => {
+    const fetchInitialInsight = async () => {
+      setIsLoadingInsight(true)
+      try {
+        const response = await fetch("http://localhost:8000/api/generate-marketing-insight", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            data: {
+              campaignPerformance,
+              keywordTrends,
+              recentReviews,
+              campaignSuggestions,
+              totalReach,
+              totalEngagement,
+              conversionRate,
+              avgSentiment,
+            },
+            question: "Provide a summary of the marketing performance and recommendations.",
+          }),
+        })
+        const result = await response.json()
+        setMarketingInsight(result.insight)
+      } catch (error) {
+        setMarketingInsight("Failed to fetch initial insight. Is the backend running?")
+      } finally {
+        setIsLoadingInsight(false)
+      }
+    }
+    fetchInitialInsight()
+  }, [])
 
   const generateContent = () => {
     const templates = [
@@ -281,108 +351,122 @@ export function MarketingDashboard() {
         </Card>
       </div>
 
-      {/* AI Content Generator */}
+      {/* Video Generator Section */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Sparkles className="h-5 w-5 text-primary" />
-            <span>AI Content Generator</span>
+            <span>Video Generator</span>
           </CardTitle>
-          <CardDescription>Generate engaging content and images for your social media campaigns</CardDescription>
+          <CardDescription>Create AI-powered marketing videos for your campaigns</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="platform">Platform</Label>
-                <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select platform" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="whatsapp">WhatsApp Business</SelectItem>
-                    <SelectItem value="instagram">Instagram</SelectItem>
-                    <SelectItem value="facebook">Facebook</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="campaign-type">Campaign Type</Label>
-                <Select value={campaignType} onValueChange={setCampaignType}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="promotion">Promotion</SelectItem>
-                    <SelectItem value="product-launch">Product Launch</SelectItem>
-                    <SelectItem value="engagement">Engagement</SelectItem>
-                    <SelectItem value="testimonial">Customer Testimonial</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            {/* AI Marketing Video Generator Card */}
+            <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2 text-base">
+                  <Wand className="h-4 w-4 text-primary" />
+                  <span>AI Marketing Video Generator</span>
+                </CardTitle>
+                <CardDescription>Generate engaging marketing videos for social media</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="platform">Platform</Label>
+                      <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select platform" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="whatsapp">WhatsApp Business</SelectItem>
+                          <SelectItem value="instagram">Instagram</SelectItem>
+                          <SelectItem value="facebook">Facebook</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="campaign-type">Campaign Type</Label>
+                      <Select value={campaignType} onValueChange={setCampaignType}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="promotion">Promotion</SelectItem>
+                          <SelectItem value="product-launch">Product Launch</SelectItem>
+                          <SelectItem value="engagement">Engagement</SelectItem>
+                          <SelectItem value="testimonial">Customer Testimonial</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="product-name">Product / Service name</Label>
-                <Input
-                  id="product-name"
-                  placeholder="e.g., Premium Leather Wallet"
-                  value={productName}
-                  onChange={(e) => setProductName(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="brand-color">Brand color preference</Label>
-                <Input
-                  id="brand-color"
-                  placeholder="e.g., Use brand default"
-                  value={brandColor}
-                  onChange={(e) => setBrandColor(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="image-text">Any text to show on image? (optional)</Label>
-                <Input
-                  id="image-text"
-                  placeholder="e.g., 50% Off"
-                  value={imageText}
-                  onChange={(e) => setImageText(e.target.value)}
-                />
-              </div>
-            </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="product-name">Product / Service name</Label>
+                      <Input
+                        id="product-name"
+                        placeholder="e.g., Premium Leather Wallet"
+                        value={productName}
+                        onChange={(e) => setProductName(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="brand-color">Brand color preference</Label>
+                      <Input
+                        id="brand-color"
+                        placeholder="e.g., Use brand default"
+                        value={brandColor}
+                        onChange={(e) => setBrandColor(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="image-text">Any text to show on image? (optional)</Label>
+                      <Input
+                        id="image-text"
+                        placeholder="e.g., 50% Off"
+                        value={imageText}
+                        onChange={(e) => setImageText(e.target.value)}
+                      />
+                    </div>
+                  </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="generated-content">Generated Content</Label>
-              <Textarea
-                id="generated-content"
-                placeholder="Click 'Generate Content' to create AI-powered marketing copy..."
-                value={generatedContent}
-                onChange={(e) => setGeneratedContent(e.target.value)}
-                rows={4}
-              />
-            </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="generated-content">Generated Content</Label>
+                    <Textarea
+                      id="generated-content"
+                      placeholder="Click 'Generate Content' to create AI-powered marketing copy..."
+                      value={generatedContent}
+                      onChange={(e) => setGeneratedContent(e.target.value)}
+                      rows={4}
+                    />
+                  </div>
 
-            <div className="flex space-x-2">
-              <Button onClick={generateContent} className="flex items-center space-x-2">
-                <Brain className="h-4 w-4" />
-                <span>Generate Content</span>
-              </Button>
-              <Button onClick={generateImage} disabled={isGeneratingImage} variant="outline">
-                <Zap className="h-4 w-4 mr-2" />
-                {isGeneratingImage ? "Generating..." : "Generate Image"}
-              </Button>
-              <Button variant="outline">Save Template</Button>
-            </div>
+                  <div className="flex space-x-2">
+                    <Button onClick={generateContent} className="flex items-center space-x-2">
+                      <Brain className="h-4 w-4" />
+                      <span>Generate Content</span>
+                    </Button>
+                    <Button onClick={generateImage} disabled={isGeneratingImage} variant="outline">
+                      <Zap className="h-4 w-4 mr-2" />
+                      {isGeneratingImage ? "Generating..." : "Generate Image"}
+                    </Button>
+                    <Button variant="outline">Save Template</Button>
+                  </div>
 
-            {generatedImage && (
-              <div className="mt-4">
-                <Label>Generated Image</Label>
-                <div className="mt-2 border rounded-lg overflow-hidden">
-                  <img src={generatedImage} alt="Generated by AI" className="w-full" />
+                  {generatedImage && (
+                    <div className="mt-4">
+                      <Label>Generated Image</Label>
+                      <div className="mt-2 border rounded-lg overflow-hidden">
+                        <img src={generatedImage} alt="Generated by AI" className="w-full" />
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
+              </CardContent>
+            </Card>
           </div>
         </CardContent>
       </Card>
@@ -588,32 +672,28 @@ export function MarketingDashboard() {
             <Brain className="h-5 w-5 text-primary" />
             <span>AI Marketing Insights</span>
           </CardTitle>
-          <CardDescription>Data-driven recommendations to boost your marketing performance</CardDescription>
+          <CardDescription>Ask a question to get a real-time analysis of your marketing data.</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="p-4 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200">
-              <div className="font-medium text-green-800 dark:text-green-200 mb-2">High-Performing Content</div>
-              <p className="text-sm text-green-700 dark:text-green-300">
-                Posts mentioning "quality products" and "fast delivery" get 40% more engagement. Consider highlighting
-                these strengths in your next campaign.
-              </p>
-            </div>
-            <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200">
-              <div className="font-medium text-blue-800 dark:text-blue-200 mb-2">Optimal Posting Time</div>
-              <p className="text-sm text-blue-700 dark:text-blue-300">
-                Your audience is most active between 7-9 PM on weekdays. Scheduling posts during this window could
-                increase reach by 25%.
-              </p>
-            </div>
-            <div className="p-4 bg-yellow-50 dark:bg-yellow-950 rounded-lg border border-yellow-200">
-              <div className="font-medium text-yellow-800 dark:text-yellow-200 mb-2">Customer Service Focus</div>
-              <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                Customer service mentions are trending down (-5%). Consider creating content that showcases your support
-                team and response times.
-              </p>
-            </div>
+        <CardContent className="space-y-4">
+          <div className="flex space-x-2">
+            <Input
+              placeholder="e.g., 'What's driving the highest engagement?'"
+              value={insightQuestion}
+              onChange={(e) => setInsightQuestion(e.target.value)}
+            />
+            <Button onClick={handleGenerateInsight} disabled={isLoadingInsight}>
+              {isLoadingInsight ? "..." : "Ask"}
+            </Button>
           </div>
+          {marketingInsight && (
+            <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200">
+              <CardContent className="pt-4">
+                <p className="text-sm text-blue-700 dark:text-blue-300 whitespace-pre-wrap">
+                  {marketingInsight}
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </CardContent>
       </Card>
     </div>

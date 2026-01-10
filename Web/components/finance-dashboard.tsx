@@ -20,6 +20,7 @@ import {
   Brain,
   Wand,
 } from "lucide-react"
+import { LoanCalculator } from "./loan-calculator"
 import {
   LineChart,
   Line,
@@ -612,6 +613,9 @@ export function FinanceDashboard() {
           )}
         </CardContent>
       </Card>
+
+      {/* Loan Calculator Section */}
+      <LoanCalculator />
     </div>
   )
 }

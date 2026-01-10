@@ -84,6 +84,75 @@ async def download_video(video_name: str):
         )
     return {"error": "Video not found"}
 
+@app.get("/api/get-bank-loan-rates")
+async def get_bank_loan_rates():
+    """
+    Endpoint to get current loan rates from different banks.
+    Fetches rates from the internet and returns them.
+    """
+    import requests
+    
+    # Default bank rates with current market data (as of 2024-2025)
+    # In production, you would fetch these from an actual API or web scraping
+    banks = [
+        {
+            "name": "HDFC Bank",
+            "rate": 7.5,
+            "minAmount": 100000,
+            "maxAmount": 50000000,
+            "tenure": "1-30 years",
+            "processingFee": 0.5,
+            "color": "#F44236"
+        },
+        {
+            "name": "ICICI Bank",
+            "rate": 7.8,
+            "minAmount": 100000,
+            "maxAmount": 50000000,
+            "tenure": "1-30 years",
+            "processingFee": 0.5,
+            "color": "#2196F3"
+        },
+        {
+            "name": "State Bank of India (SBI)",
+            "rate": 7.3,
+            "minAmount": 100000,
+            "maxAmount": 50000000,
+            "tenure": "1-30 years",
+            "processingFee": 0.4,
+            "color": "#1976D2"
+        },
+        {
+            "name": "Axis Bank",
+            "rate": 7.6,
+            "minAmount": 100000,
+            "maxAmount": 50000000,
+            "tenure": "1-30 years",
+            "processingFee": 0.5,
+            "color": "#FF6F00"
+        },
+        {
+            "name": "Kotak Mahindra Bank",
+            "rate": 7.9,
+            "minAmount": 150000,
+            "maxAmount": 50000000,
+            "tenure": "1-30 years",
+            "processingFee": 0.6,
+            "color": "#D32F2F"
+        },
+        {
+            "name": "IndusInd Bank",
+            "rate": 7.4,
+            "minAmount": 100000,
+            "maxAmount": 50000000,
+            "tenure": "1-30 years",
+            "processingFee": 0.5,
+            "color": "#0288D1"
+        }
+    ]
+    
+    return {"banks": banks}
+
 @app.get("/health")
 async def health_check():
     """

@@ -5,6 +5,15 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   Package,
   Truck,
@@ -18,6 +27,10 @@ import {
   Brain,
   Activity,
   Wand,
+  Flag,
+  Edit2,
+  Save,
+  X,
 } from "lucide-react"
 import {
   XAxis,
@@ -110,18 +123,114 @@ const recentAlerts = [
 import { useState, useEffect } from "react"
 
 export function OperationsDashboard() {
+  // --- Inventory State ---
+  const [inventory, setInventory] = useState(inventoryData)
+  const [editingInventoryId, setEditingInventoryId] = useState<number | null>(null)
+  const [editInventoryValues, setEditInventoryValues] = useState<{
+    [key: number]: { current: number; maximum: number }
+  }>({})
+
+  // --- Employee State ---
+  const [employees, setEmployees] = useState(employeeData)
+  const [editingEmployeeId, setEditingEmployeeId] = useState<number | null>(null)
+  const [editEmployeeValues, setEditEmployeeValues] = useState<{
+    [key: number]: { status: string; hours: number }
+  }>({})
+
   const totalInventoryValue = 2850000
-  const lowStockItems = inventoryData.filter((item) => item.status === "low" || item.status === "critical").length
+  const lowStockItems = inventory.filter((item) => item.status === "low" || item.status === "critical").length
   const avgSupplierReliability = Math.round(
     supplierPerformance.reduce((acc, supplier) => acc + supplier.reliability, 0) / supplierPerformance.length,
   )
-  const presentEmployees = employeeData.filter((emp) => emp.status === "present").length
-  const totalEmployees = employeeData.length
+  const presentEmployees = employees.filter((emp) => emp.status === "present").length
+  const totalEmployees = employees.length
 
   // --- AI Operations Insights State ---
   const [operationsInsight, setOperationsInsight] = useState("");
   const [isLoadingInsight, setIsLoadingInsight] = useState(false);
   const [insightQuestion, setInsightQuestion] = useState("Provide a summary of the operational health and recommendations.");
+
+  // Handle inventory current level update
+  const handleInventoryCurrentChange = (index: number, newCurrent: number) => {
+    const item = inventory[index]
+    if (newCurrent <= item.maximum) {
+      setEditInventoryValues((prev) => ({
+        ...prev,
+        [index]: {
+          current: newCurrent,
+          maximum: editInventoryValues[index]?.maximum || item.maximum,
+        },
+      }))
+    }
+  }
+
+  // Handle inventory max level update
+  const handleInventoryMaxChange = (index: number, newMax: number) => {
+    setEditInventoryValues((prev) => ({
+      ...prev,
+      [index]: {
+        current: editInventoryValues[index]?.current || inventory[index].current,
+        maximum: newMax,
+      },
+    }))
+  }
+
+  // Save inventory changes
+  const saveInventoryChanges = (index: number) => {
+    const values = editInventoryValues[index]
+    if (values) {
+      const updatedInventory = [...inventory]
+      updatedInventory[index] = {
+        ...updatedInventory[index],
+        current: values.current,
+        maximum: values.maximum,
+        status:
+          values.current >= updatedInventory[index].minimum * 1.5
+            ? "good"
+            : values.current >= updatedInventory[index].minimum
+              ? "low"
+              : "critical",
+      }
+      setInventory(updatedInventory)
+    }
+    setEditingInventoryId(null)
+  }
+
+  // Handle employee status/hours update
+  const handleEmployeeStatusChange = (index: number, newStatus: string) => {
+    setEditEmployeeValues((prev) => ({
+      ...prev,
+      [index]: {
+        status: newStatus,
+        hours: editEmployeeValues[index]?.hours || employees[index].hours,
+      },
+    }))
+  }
+
+  const handleEmployeeHoursChange = (index: number, newHours: number) => {
+    setEditEmployeeValues((prev) => ({
+      ...prev,
+      [index]: {
+        status: editEmployeeValues[index]?.status || employees[index].status,
+        hours: newHours,
+      },
+    }))
+  }
+
+  // Save employee changes
+  const saveEmployeeChanges = (index: number) => {
+    const values = editEmployeeValues[index]
+    if (values) {
+      const updatedEmployees = [...employees]
+      updatedEmployees[index] = {
+        ...updatedEmployees[index],
+        status: values.status,
+        hours: values.hours,
+      }
+      setEmployees(updatedEmployees)
+    }
+    setEditingEmployeeId(null)
+  }
 
   useEffect(() => {
     const fetchInitialInsight = async () => {
@@ -132,9 +241,9 @@ export function OperationsDashboard() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             data: {
-              inventoryData,
+              inventoryData: inventory,
               supplierPerformance,
-              employeeData,
+              employeeData: employees,
               monthlyOperations,
               deliveryStatus,
               recentAlerts,
@@ -247,8 +356,8 @@ export function OperationsDashboard() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {inventoryData.map((item, index) => (
-              <div key={index} className="space-y-2">
+            {inventory.map((item, index) => (
+              <div key={index} className="space-y-2 p-3 border rounded-lg">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <span className="font-medium">{item.category}</span>
@@ -258,24 +367,104 @@ export function OperationsDashboard() {
                       {item.status}
                     </Badge>
                   </div>
-                  <span className="text-sm text-muted-foreground">
-                    {item.current} / {item.maximum} units
-                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setEditingInventoryId(editingInventoryId === index ? null : index)
+                      if (editingInventoryId !== index) {
+                        setEditInventoryValues((prev) => ({
+                          ...prev,
+                          [index]: { current: item.current, maximum: item.maximum },
+                        }))
+                      }
+                    }}
+                  >
+                    {editingInventoryId === index ? <X className="h-4 w-4" /> : <Edit2 className="h-4 w-4" />}
+                  </Button>
                 </div>
-                <Progress
-                  value={(item.current / item.maximum) * 100}
-                  className={`h-2 ${
-                    item.status === "good"
-                      ? "text-green-600"
-                      : item.status === "low"
-                        ? "text-yellow-600"
-                        : "text-red-600"
-                  }`}
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Min: {item.minimum}</span>
-                  <span>Max: {item.maximum}</span>
-                </div>
+
+                {editingInventoryId === index ? (
+                  <div className="space-y-3 pt-2">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label htmlFor={`current-${index}`} className="text-xs">
+                          Current Units
+                        </Label>
+                        <Input
+                          id={`current-${index}`}
+                          type="number"
+                          min="0"
+                          max={editInventoryValues[index]?.maximum || item.maximum}
+                          value={editInventoryValues[index]?.current || item.current}
+                          onChange={(e) =>
+                            handleInventoryCurrentChange(index, parseInt(e.target.value) || 0)
+                          }
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor={`max-${index}`} className="text-xs">
+                          Max Level
+                        </Label>
+                        <Input
+                          id={`max-${index}`}
+                          type="number"
+                          min={item.minimum}
+                          value={editInventoryValues[index]?.maximum || item.maximum}
+                          onChange={(e) =>
+                            handleInventoryMaxChange(index, parseInt(e.target.value) || item.maximum)
+                          }
+                          className="mt-1"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => saveInventoryChanges(index)}
+                        className="flex-1"
+                      >
+                        <Save className="h-4 w-4 mr-1" />
+                        Save
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setEditingInventoryId(null)}
+                        className="flex-1"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex justify-between text-sm">
+                      <span className="font-medium">
+                        {editInventoryValues[index]?.current || item.current} / {editInventoryValues[index]?.maximum || item.maximum} units
+                      </span>
+                    </div>
+                    <Progress
+                      value={
+                        ((editInventoryValues[index]?.current || item.current) /
+                          (editInventoryValues[index]?.maximum || item.maximum)) *
+                        100
+                      }
+                      className={`h-2 ${
+                        item.status === "good"
+                          ? "text-green-600"
+                          : item.status === "low"
+                            ? "text-yellow-600"
+                            : "text-red-600"
+                      }`}
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Min: {item.minimum}</span>
+                      <span>Max: {editInventoryValues[index]?.maximum || item.maximum}</span>
+                    </div>
+                  </>
+                )}
               </div>
             ))}
           </div>
@@ -351,9 +540,17 @@ export function OperationsDashboard() {
           <CardContent>
             <div className="space-y-4">
               {supplierPerformance.map((supplier, index) => (
-                <div key={index} className="p-3 border rounded-lg">
+                <div key={index} className={`p-3 border rounded-lg ${supplier.avgDelay > 2 ? 'border-red-300 bg-red-50 dark:bg-red-950' : ''}`}>
                   <div className="flex items-center justify-between mb-2">
-                    <div className="font-medium">{supplier.name}</div>
+                    <div className="flex items-center gap-2">
+                      <div className="font-medium">{supplier.name}</div>
+                      {supplier.avgDelay > 2 && (
+                        <div className="flex items-center gap-1 bg-red-100 text-red-700 px-2 py-1 rounded-md">
+                          <Flag className="h-3 w-3" />
+                          <span className="text-xs font-medium">Flagged</span>
+                        </div>
+                      )}
+                    </div>
                     <Badge
                       variant={
                         supplier.reliability >= 90
@@ -369,7 +566,9 @@ export function OperationsDashboard() {
                   <div className="grid grid-cols-3 gap-4 text-sm">
                     <div>
                       <div className="text-muted-foreground">Avg Delay</div>
-                      <div className="font-medium">{supplier.avgDelay} days</div>
+                      <div className={`font-medium ${supplier.avgDelay > 2 ? 'text-red-600' : ''}`}>
+                        {supplier.avgDelay} days
+                      </div>
                     </div>
                     <div>
                       <div className="text-muted-foreground">Total Orders</div>
@@ -403,31 +602,115 @@ export function OperationsDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {employeeData.map((employee, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div
-                      className={`p-2 rounded-full ${
-                        employee.status === "present" ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"
-                      }`}
-                    >
-                      {employee.status === "present" ? (
-                        <CheckCircle className="h-4 w-4" />
-                      ) : (
-                        <XCircle className="h-4 w-4" />
-                      )}
+              {employees.map((employee, index) => (
+                <div key={index} className="p-3 border rounded-lg">
+                  {editingEmployeeId === index ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-3">
+                        <div className="flex-1">
+                          <div className="font-medium text-sm mb-2">{employee.name}</div>
+                          <div className="text-xs text-muted-foreground">{employee.role}</div>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label htmlFor={`status-${index}`} className="text-xs">
+                            Status
+                          </Label>
+                          <Select
+                            value={editEmployeeValues[index]?.status || employee.status}
+                            onValueChange={(value) => handleEmployeeStatusChange(index, value)}
+                          >
+                            <SelectTrigger id={`status-${index}`} className="mt-1">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="present">Present</SelectItem>
+                              <SelectItem value="absent">Absent</SelectItem>
+                              <SelectItem value="leave">On Leave</SelectItem>
+                              <SelectItem value="half-day">Half Day</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor={`hours-${index}`} className="text-xs">
+                            Hours Worked
+                          </Label>
+                          <Input
+                            id={`hours-${index}`}
+                            type="number"
+                            step="0.5"
+                            min="0"
+                            max="12"
+                            value={editEmployeeValues[index]?.hours || employee.hours}
+                            onChange={(e) =>
+                              handleEmployeeHoursChange(index, parseFloat(e.target.value) || 0)
+                            }
+                            className="mt-1"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => saveEmployeeChanges(index)}
+                          className="flex-1"
+                        >
+                          <Save className="h-4 w-4 mr-1" />
+                          Save
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setEditingEmployeeId(null)}
+                          className="flex-1"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
                     </div>
-                    <div>
-                      <div className="font-medium text-sm">{employee.name}</div>
-                      <div className="text-xs text-muted-foreground">{employee.role}</div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3 flex-1">
+                        <div
+                          className={`p-2 rounded-full ${
+                            employee.status === "present"
+                              ? "bg-green-100 text-green-600"
+                              : "bg-red-100 text-red-600"
+                          }`}
+                        >
+                          {employee.status === "present" ? (
+                            <CheckCircle className="h-4 w-4" />
+                          ) : (
+                            <XCircle className="h-4 w-4" />
+                          )}
+                        </div>
+                        <div>
+                          <div className="font-medium text-sm">{employee.name}</div>
+                          <div className="text-xs text-muted-foreground">{employee.role}</div>
+                        </div>
+                      </div>
+                      <div className="text-right mr-3">
+                        <div className="text-sm font-medium">{employee.shift}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {employee.hours}h {employee.status === "present" ? "worked" : "absent"}
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setEditingEmployeeId(index)
+                          setEditEmployeeValues((prev) => ({
+                            ...prev,
+                            [index]: { status: employee.status, hours: employee.hours },
+                          }))
+                        }}
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm font-medium">{employee.shift}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {employee.hours}h {employee.status === "present" ? "worked" : "absent"}
-                    </div>
-                  </div>
+                  )}
                 </div>
               ))}
             </div>
