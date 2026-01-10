@@ -1,76 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-// Note: Gemini doesn't have image generation capabilities
-// This endpoint will provide image suggestions and prompts instead
+const DEEPAI_API_KEY = "dedc7515-f29e-432c-b867-8b7f7b1e4009"; // Replace with your DeepAI API key
+const API_URL = "https://api.deepai.org/api/text2img";
 
 export async function POST(request: NextRequest) {
   try {
-    const { prompt, platform, style } = await request.json()
+    const { prompt } = await request.json()
 
     if (!prompt) {
-      return NextResponse.json(
-        { error: 'Content prompt is required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Prompt is required' }, { status: 400 })
     }
 
-    // Since Gemini doesn't generate images, we'll provide detailed image suggestions
-    const platformStyles = {
-      whatsapp: "clean, professional, minimal design suitable for messaging",
-      instagram: "vibrant, trendy, visually striking with modern aesthetics",
-      facebook: "professional, clear, community-oriented design"
+    const formData = new FormData();
+    formData.append('text', prompt);
+
+    const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+            "api-key": DEEPAI_API_KEY,
+        },
+        body: formData,
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`DeepAI API error: ${response.status} ${response.statusText}`, errorText);
+      return NextResponse.json({ error: 'Failed to generate image from DeepAI API', details: errorText }, { status: response.status })
     }
 
-    const stylePrompts = {
-      modern: "modern, clean design with contemporary typography",
-      vintage: "retro, nostalgic aesthetic with classic elements",
-      minimalist: "minimal, clean design with plenty of white space",
-      bold: "bold, attention-grabbing design with strong colors"
+    const jsonResponse = await response.json();
+
+    if (!jsonResponse || !jsonResponse.output_url) {
+        console.error("DeepAI API response did not contain output_url:", jsonResponse);
+        return NextResponse.json({ error: 'DeepAI API response did not contain image URL' }, { status: 500 })
     }
 
-    const platformStyle = platformStyles[platform as keyof typeof platformStyles] || platformStyles.whatsapp
-    const selectedStyle = stylePrompts[style as keyof typeof stylePrompts] || stylePrompts.modern
-
-    const imageSuggestions = {
-      prompt: prompt,
-      enhancedPrompt: `Create a marketing image for ${platform} that is:
-- Style: ${selectedStyle}
-- Platform: ${platformStyle}
-- Content: ${prompt}
-
-Requirements:
-- High quality, professional marketing image
-- Suitable for social media marketing
-- Clear, readable text if any
-- Engaging visual design
-- Optimized for ${platform} dimensions`,
-      suggestions: [
-        "Use tools like Canva, Adobe Express, or Figma to create the image",
-        "Consider using stock photo services like Unsplash or Pexels for base images",
-        "Add your brand colors and typography to maintain consistency",
-        "Include a clear call-to-action in the visual design",
-        "Ensure the image is optimized for the target platform's dimensions"
-      ],
-      tools: [
-        {
-          name: "Openai GPT Image-1",
-          url: "https://chat.openai.com/",
-          description: "Best Text to Image Generation Model"
-        }
-      ],
-      platform,
-      style,
-      generatedAt: new Date().toISOString()
-    }
-
-    return NextResponse.json(imageSuggestions)
+    return NextResponse.json({ imageUrl: jsonResponse.output_url }, { status: 200 });
 
   } catch (error) {
-    console.error('Image suggestion error:', error)
-    
-    return NextResponse.json(
-      { error: 'Failed to generate image suggestions. Please try again.' },
-      { status: 500 }
-    )
+    console.error('Image generation error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

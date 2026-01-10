@@ -36,6 +36,8 @@ import {
 } from "recharts"
 import { useState } from "react"
 
+import { Input } from "@/components/ui/input"
+
 // Sample data for demonstration
 const campaignPerformance = [
   { month: "Jan", whatsapp: 1200, instagram: 800, organic: 600, conversions: 45 },
@@ -127,8 +129,14 @@ const keywordTrends = [
 ]
 
 export function MarketingDashboard() {
-  const [selectedCampaign, setSelectedCampaign] = useState("")
+  const [selectedPlatform, setSelectedPlatform] = useState("")
+  const [campaignType, setCampaignType] = useState("")
+  const [productName, setProductName] = useState("")
+  const [brandColor, setBrandColor] = useState("")
+  const [imageText, setImageText] = useState("")
   const [generatedContent, setGeneratedContent] = useState("")
+  const [generatedImage, setGeneratedImage] = useState("")
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false)
 
   const totalReach = 5400
   const totalEngagement = 1250
@@ -144,6 +152,65 @@ export function MarketingDashboard() {
     const randomTemplate = templates[Math.floor(Math.random() * templates.length)]
     setGeneratedContent(randomTemplate)
   }
+
+  const generateImage = async () => {
+    setIsGeneratingImage(true);
+    setGeneratedImage("");
+
+    let visualIntent = "";
+    switch (campaignType) {
+      case "promotion":
+        visualIntent = "Offer-focused";
+        break;
+      case "product-launch":
+        visualIntent = "Product hero";
+        break;
+      case "engagement":
+        visualIntent = "Lifestyle / interactive";
+        break;
+      case "testimonial":
+        visualIntent = "Human-centric / quote-based";
+        break;
+    }
+
+    const prompt = [
+        selectedPlatform,
+        campaignType,
+        visualIntent,
+        productName,
+        brandColor,
+        imageText,
+        "modern",
+        "clean"
+    ].filter(Boolean).join(' ');
+
+    try {
+      const response = await fetch('/api/generate-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt }),
+      })
+
+      if (response.ok) {
+        const jsonResponse = await response.json();
+        if (jsonResponse.imageUrl) {
+          setGeneratedImage(jsonResponse.imageUrl);
+        } else {
+          console.error("API response did not contain imageUrl:", jsonResponse);
+        }
+      } else {
+        console.error("Failed to generate image")
+        const error = await response.json()
+        console.error(error)
+      }
+    } catch (error) {
+      console.error("Error generating image:", error)
+    } finally {
+      setIsGeneratingImage(false)
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -221,14 +288,14 @@ export function MarketingDashboard() {
             <Sparkles className="h-5 w-5 text-primary" />
             <span>AI Content Generator</span>
           </CardTitle>
-          <CardDescription>Generate engaging content for your social media campaigns</CardDescription>
+          <CardDescription>Generate engaging content and images for your social media campaigns</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="platform">Platform</Label>
-                <Select value={selectedCampaign} onValueChange={setSelectedCampaign}>
+                <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select platform" />
                   </SelectTrigger>
@@ -241,7 +308,7 @@ export function MarketingDashboard() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="campaign-type">Campaign Type</Label>
-                <Select>
+                <Select value={campaignType} onValueChange={setCampaignType}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
@@ -252,6 +319,36 @@ export function MarketingDashboard() {
                     <SelectItem value="testimonial">Customer Testimonial</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="product-name">Product / Service name</Label>
+                <Input
+                  id="product-name"
+                  placeholder="e.g., Premium Leather Wallet"
+                  value={productName}
+                  onChange={(e) => setProductName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="brand-color">Brand color preference</Label>
+                <Input
+                  id="brand-color"
+                  placeholder="e.g., Use brand default"
+                  value={brandColor}
+                  onChange={(e) => setBrandColor(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="image-text">Any text to show on image? (optional)</Label>
+                <Input
+                  id="image-text"
+                  placeholder="e.g., 50% Off"
+                  value={imageText}
+                  onChange={(e) => setImageText(e.target.value)}
+                />
               </div>
             </div>
 
@@ -271,12 +368,21 @@ export function MarketingDashboard() {
                 <Brain className="h-4 w-4" />
                 <span>Generate Content</span>
               </Button>
-              <Button variant="outline">
+              <Button onClick={generateImage} disabled={isGeneratingImage} variant="outline">
                 <Zap className="h-4 w-4 mr-2" />
-                Generate Image
+                {isGeneratingImage ? "Generating..." : "Generate Image"}
               </Button>
               <Button variant="outline">Save Template</Button>
             </div>
+
+            {generatedImage && (
+              <div className="mt-4">
+                <Label>Generated Image</Label>
+                <div className="mt-2 border rounded-lg overflow-hidden">
+                  <img src={generatedImage} alt="Generated by AI" className="w-full" />
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

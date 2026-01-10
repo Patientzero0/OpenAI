@@ -32,6 +32,7 @@ import {
   Pie,
   Cell,
 } from "recharts"
+import { motion, AnimatePresence } from "framer-motion"
 
 // Sample data for demonstration
 const cashflowData = [
@@ -87,7 +88,7 @@ const recentTransactions = [
   },
 ]
 
-const overduePayments = [
+const overduePaymentsData = [
   { customer: "Retail Store XYZ", amount: 18500, daysOverdue: 15, invoiceNo: "INV-2024-001" },
   { customer: "Restaurant ABC", amount: 12300, daysOverdue: 8, invoiceNo: "INV-2024-003" },
   { customer: "Office Supplies Ltd", amount: 7800, daysOverdue: 22, invoiceNo: "INV-2023-089" },
@@ -97,7 +98,7 @@ const originalData = {
   cashflowData,
   expenseBreakdown,
   recentTransactions,
-  overduePayments,
+  overduePayments: overduePaymentsData,
 }
 
 export function FinanceDashboard() {
@@ -109,16 +110,62 @@ export function FinanceDashboard() {
   const [financialInsight, setFinancialInsight] = useState("")
   const [isLoadingInsight, setIsLoadingInsight] = useState(false)
   const [insightQuestion, setInsightQuestion] = useState("")
+  const [overduePayments, setOverduePayments] = useState(overduePaymentsData)
 
-  const currentCash = 125000
-  const monthlyRevenue = 67000
-  const monthlyExpenses = 45000
+  const handlePaid = (invoiceNo: string) => {
+    setOverduePayments((prev) => prev.filter((p) => p.invoiceNo !== invoiceNo))
+  }
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+
+  // User-editable financial inputs (persisted to localStorage)
+  const [currentCashInput, setCurrentCashInput] = useState("125000")
+  const [monthlyRevenueInput, setMonthlyRevenueInput] = useState("67000")
+  const [monthlyExpensesInput, setMonthlyExpensesInput] = useState("45000")
+
+  useEffect(() => {
+    try {
+      const savedCash = localStorage.getItem("currentCash")
+      const savedRevenue = localStorage.getItem("monthlyRevenue")
+      const savedExpenses = localStorage.getItem("monthlyExpenses")
+      if (savedCash) setCurrentCashInput(savedCash)
+      if (savedRevenue) setMonthlyRevenueInput(savedRevenue)
+      if (savedExpenses) setMonthlyExpensesInput(savedExpenses)
+    } catch (e) {
+      // ignore storage errors (e.g., SSR or blocked storage)
+    }
+  }, [])
+
+  // Derived numeric values
+  const currentCash = Number(currentCashInput) || 0
+  const monthlyRevenue = Number(monthlyRevenueInput) || 0
+  const monthlyExpenses = Number(monthlyExpensesInput) || 0
   const netProfit = monthlyRevenue - monthlyExpenses
-  const profitMargin = ((netProfit / monthlyRevenue) * 100).toFixed(1)
+  const profitMargin = monthlyRevenue > 0 ? ((netProfit / monthlyRevenue) * 100).toFixed(1) : "0.0"
 
-  const cashRunway = Math.floor(currentCash / monthlyExpenses)
-  const riskLevel = cashRunway > 3 ? "green" : cashRunway > 1 ? "yellow" : "red"
-  const riskScore = cashRunway > 3 ? 85 : cashRunway > 1 ? 60 : 25
+  // Cash runway (months) and a combined financial health score
+  const cashRunway = monthlyExpenses > 0 ? Math.floor(currentCash / monthlyExpenses) : Infinity
+
+  const runwayScore = cashRunway > 6 ? 100 : cashRunway > 3 ? 85 : cashRunway > 1 ? 60 : 25
+  const profitScore = Number(profitMargin) >= 20 ? 100 : Number(profitMargin) >= 10 ? 80 : Number(profitMargin) >= 0 ? 50 : 20
+  const riskScore = Math.round(runwayScore * 0.6 + profitScore * 0.4)
+  const riskLevel = riskScore >= 75 ? "green" : riskScore >= 50 ? "yellow" : "red"
+
+  // Persist inputs to localStorage when they change
+  useEffect(() => {
+    if (isClient) {
+      try {
+        localStorage.setItem("currentCash", currentCashInput)
+        localStorage.setItem("monthlyRevenue", monthlyRevenueInput)
+        localStorage.setItem("monthlyExpenses", monthlyExpensesInput)
+      } catch (e) {
+        // ignore storage errors (e.g., SSR or blocked storage)
+      }
+    }
+  }, [currentCashInput, monthlyRevenueInput, monthlyExpensesInput, isClient])
 
   const handleGenerateInsight = async () => {
     setIsLoadingInsight(true)
@@ -191,7 +238,7 @@ export function FinanceDashboard() {
 
   return (
     <div className="space-y-6">
-      {riskLevel === "yellow" && (
+      {isClient && riskLevel === "yellow" && (
         <Alert className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950">
           <AlertTriangle className="h-4 w-4 text-yellow-600" />
           <AlertTitle className="text-yellow-800 dark:text-yellow-200">Cash Flow Warning</AlertTitle>
@@ -201,7 +248,7 @@ export function FinanceDashboard() {
         </Alert>
       )}
 
-      {riskLevel === "red" && (
+      {isClient && riskLevel === "red" && (
         <Alert className="border-red-500 bg-red-50 dark:bg-red-950">
           <AlertTriangle className="h-4 w-4 text-red-600" />
           <AlertTitle className="text-red-800 dark:text-red-200">Critical Cash Flow Alert</AlertTitle>
@@ -218,8 +265,13 @@ export function FinanceDashboard() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹{currentCash.toLocaleString('en-IN')}</div>
-            <p className="text-xs text-muted-foreground">{cashRunway} months runway</p>
+            <Input
+              type="number"
+              value={currentCashInput}
+              onChange={(e) => setCurrentCashInput(e.target.value)}
+              aria-label="Current Cash"
+            />
+            <p className="text-xs text-muted-foreground mt-2">₹{currentCash.toLocaleString('en-IN')} • {isFinite(cashRunway) ? `${cashRunway} months runway` : "No expenses set"}</p>
           </CardContent>
         </Card>
 
@@ -229,13 +281,13 @@ export function FinanceDashboard() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹{monthlyRevenue.toLocaleString('en-IN')}</div>
-            <p className="text-xs text-muted-foreground">
-              <span className="text-green-600 flex items-center">
-                <ArrowUp className="h-3 w-3 mr-1" />
-                +12% from last month
-              </span>
-            </p>
+            <Input
+              type="number"
+              value={monthlyRevenueInput}
+              onChange={(e) => setMonthlyRevenueInput(e.target.value)}
+              aria-label="Monthly Revenue"
+            />
+            <p className="text-xs text-muted-foreground mt-2">₹{monthlyRevenue.toLocaleString('en-IN')}</p>
           </CardContent>
         </Card>
 
@@ -245,13 +297,13 @@ export function FinanceDashboard() {
             <TrendingDown className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹{monthlyExpenses.toLocaleString('en-IN')}</div>
-            <p className="text-xs text-muted-foreground">
-              <span className="text-red-600 flex items-center">
-                <ArrowUp className="h-3 w-3 mr-1" />
-                +5% from last month
-              </span>
-            </p>
+            <Input
+              type="number"
+              value={monthlyExpensesInput}
+              onChange={(e) => setMonthlyExpensesInput(e.target.value)}
+              aria-label="Monthly Expenses"
+            />
+            <p className="text-xs text-muted-foreground mt-2">₹{monthlyExpenses.toLocaleString('en-IN')}</p>
           </CardContent>
         </Card>
 
@@ -285,9 +337,7 @@ export function FinanceDashboard() {
             </div>
             <Progress
               value={riskScore}
-              className={`h-3 ${
-                riskLevel === "green" ? "text-green-600" : riskLevel === "yellow" ? "text-yellow-600" : "text-red-600"
-              }`}
+              className={`h-3 ${riskLevel === "green" ? "text-green-600" : riskLevel === "yellow" ? "text-yellow-600" : "text-red-600"}`}
             />
             <div className="grid grid-cols-3 gap-4 text-sm">
               <div className="text-center">
@@ -450,9 +500,7 @@ export function FinanceDashboard() {
                 <div key={transaction.id} className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div
-                      className={`p-2 rounded-full ${
-                        transaction.type === "income" ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"
-                      }`}
+                      className={`p-2 rounded-full ${transaction.type === "income" ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"}`}
                     >
                       {transaction.type === "income" ? (
                         <ArrowUp className="h-4 w-4" />
@@ -489,30 +537,46 @@ export function FinanceDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {overduePayments.map((payment, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 border border-red-200 rounded-lg bg-red-50 dark:bg-red-950"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 rounded-full bg-red-100 text-red-600">
-                      <Calendar className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <div className="font-medium text-sm">{payment.customer}</div>
-                      <div className="text-xs text-muted-foreground">
-                        Invoice: {payment.invoiceNo} • {payment.daysOverdue} days overdue
+              <AnimatePresence>
+                {overduePayments.map((payment) => (
+                  <motion.div
+                    key={payment.invoiceNo}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ x: "100%", opacity: 0 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    className="flex items-center justify-between p-3 border border-red-200 rounded-lg bg-red-50 dark:bg-red-950"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 rounded-full bg-red-100 text-red-600">
+                        <Calendar className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <div className="font-medium text-sm">{payment.customer}</div>
+                        <div className="text-xs text-muted-foreground">
+                          Invoice: {payment.invoiceNo} • {payment.daysOverdue} days overdue
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-medium text-red-600">₹{payment.amount.toLocaleString('en-IN')}</div>
-                    <Button variant="outline" size="sm" className="mt-1 bg-transparent">
-                      Send Reminder
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                    <div className="text-right">
+                      <div className="font-medium text-red-600">₹{payment.amount.toLocaleString('en-IN')}</div>
+                      <div className="flex space-x-2 mt-1">
+                        <Button variant="outline" size="sm" className="bg-transparent">
+                          Send Reminder
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handlePaid(payment.invoiceNo)}
+                          className="bg-green-100 text-green-800 hover:bg-green-200"
+                        >
+                          Paid
+                        </Button>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
           </CardContent>
         </Card>
