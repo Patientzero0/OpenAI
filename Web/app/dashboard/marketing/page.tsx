@@ -1,8 +1,10 @@
 "use client"
 
 import { MarketingDashboard } from "@/components/marketing-dashboard"
+import { VideoGeneratorComponent } from "@/components/video-generator"
 import { Badge } from "@/components/ui/badge"
 import { TrendingUp, Sparkles } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function MarketingPage() {
   return (
@@ -14,7 +16,7 @@ export default function MarketingPage() {
             <TrendingUp className="h-8 w-8 text-primary" />
             <span>Marketing Dashboard</span>
           </h1>
-          <p className="text-muted-foreground mt-2">AI-driven marketing intelligence and campaign optimization</p>
+          <p className="text-muted-foreground mt-2">AI-driven marketing intelligence, campaign optimization, and video generation</p>
         </div>
         <div className="flex items-center space-x-2">
           <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
@@ -24,8 +26,23 @@ export default function MarketingPage() {
         </div>
       </div>
 
-      {/* Marketing Dashboard Component */}
-      <MarketingDashboard />
+      {/* Tabs for different sections */}
+      <Tabs defaultValue="analytics" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="analytics">Analytics & Insights</TabsTrigger>
+          <TabsTrigger value="video">Video Generator</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="analytics" className="space-y-6">
+          {/* Marketing Dashboard Component */}
+          <MarketingDashboard />
+        </TabsContent>
+        
+        <TabsContent value="video">
+          {/* Video Generator Component */}
+          <VideoGeneratorComponent />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

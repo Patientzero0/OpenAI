@@ -17,6 +17,7 @@ import {
   MapPin,
   Brain,
   Activity,
+  Wand,
 } from "lucide-react"
 import {
   XAxis,
@@ -106,6 +107,8 @@ const recentAlerts = [
   },
 ]
 
+import { useState, useEffect } from "react"
+
 export function OperationsDashboard() {
   const totalInventoryValue = 2850000
   const lowStockItems = inventoryData.filter((item) => item.status === "low" || item.status === "critical").length
@@ -114,6 +117,42 @@ export function OperationsDashboard() {
   )
   const presentEmployees = employeeData.filter((emp) => emp.status === "present").length
   const totalEmployees = employeeData.length
+
+  // --- AI Operations Insights State ---
+  const [operationsInsight, setOperationsInsight] = useState("");
+  const [isLoadingInsight, setIsLoadingInsight] = useState(false);
+  const [insightQuestion, setInsightQuestion] = useState("Provide a summary of the operational health and recommendations.");
+
+  useEffect(() => {
+    const fetchInitialInsight = async () => {
+      setIsLoadingInsight(true);
+      try {
+        const response = await fetch("http://localhost:8000/api/generate-operations-insight", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            data: {
+              inventoryData,
+              supplierPerformance,
+              employeeData,
+              monthlyOperations,
+              deliveryStatus,
+              recentAlerts,
+            },
+            question: insightQuestion,
+          }),
+        });
+        const result = await response.json();
+        setOperationsInsight(result.insight);
+      } catch (error) {
+        setOperationsInsight("Failed to fetch operations insight. Please ensure the backend is running.");
+      } finally {
+        setIsLoadingInsight(false);
+      }
+    };
+    fetchInitialInsight();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -463,27 +502,16 @@ export function OperationsDashboard() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="p-4 bg-red-50 dark:bg-red-950 rounded-lg border border-red-200">
-              <div className="font-medium text-red-800 dark:text-red-200 mb-2">Inventory Optimization</div>
-              <p className="text-sm text-red-700 dark:text-red-300">
-                Clothing category shows consistent understocking. Consider increasing minimum threshold to 60 units to
-                prevent stockouts and maintain customer satisfaction.
-              </p>
-            </div>
-            <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200">
-              <div className="font-medium text-blue-800 dark:text-blue-200 mb-2">Supplier Diversification</div>
-              <p className="text-sm text-blue-700 dark:text-blue-300">
-                Local Vendors reliability is 78%. Consider finding backup suppliers for critical items to reduce
-                dependency and improve delivery consistency.
-              </p>
-            </div>
-            <div className="p-4 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200">
-              <div className="font-medium text-green-800 dark:text-green-200 mb-2">Staff Efficiency</div>
-              <p className="text-sm text-green-700 dark:text-green-300">
-                Current attendance rate is excellent at 80%. Consider implementing performance bonuses to maintain this
-                level and reduce absenteeism further.
-              </p>
-            </div>
+            {isLoadingInsight ? (
+              <div className="flex items-center space-x-2 text-blue-700 animate-pulse">
+                <Wand className="h-4 w-4 animate-spin" />
+                <span>Generating AI insights...</span>
+              </div>
+            ) : (
+              <div className="whitespace-pre-line text-sm text-gray-800 dark:text-gray-200">
+                {operationsInsight}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
