@@ -5,6 +5,7 @@ import { GeistMono } from "geist/font/mono"
 import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
+import { HelpChatbot } from "@/components/help-chatbot"
 import { Suspense } from "react"
 import "./globals.css"
 
@@ -26,6 +27,7 @@ export default function RootLayout({
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
             {children}
             <Toaster />
+            <HelpChatbot />
           </ThemeProvider>
         </Suspense>
         <Analytics />
