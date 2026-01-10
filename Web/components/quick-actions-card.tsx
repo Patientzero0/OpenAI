@@ -33,7 +33,7 @@ export function QuickActionsCard() {
       title: "Check Inventory",
       description: "Review stock levels",
       action: "/dashboard/operations",
-      color: "bg-orange-100 text-orange-600",
+      color: "bg-cyan-100 text-cyan-600",
     },
     {
       icon: CreditCard,

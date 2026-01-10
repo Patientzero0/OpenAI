@@ -9,6 +9,20 @@ import { BusinessStoryCard } from "@/components/business-story-card"
 import { QuickActionsCard } from "@/components/quick-actions-card"
 import { OverviewCharts } from "@/components/overview-charts"
 
+// Helper function to get score class based on value
+function getScoreClass(score: number): string {
+  if (score < 40) return "score-low"
+  if (score < 70) return "score-medium"
+  return "score-high"
+}
+
+// Helper function to get score label
+function getScoreLabel(score: number): string {
+  if (score < 40) return "Low"
+  if (score < 70) return "Medium"
+  return "High"
+}
+
 export default function OverviewPage() {
   // Sample aggregated data
   const businessHealth = {
@@ -96,34 +110,34 @@ export default function OverviewPage() {
               <Progress value={businessHealth.overall} className="h-4" />
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="text-center p-4 border rounded-lg">
-                  <DollarSign className="h-8 w-8 text-primary mx-auto mb-2" />
+                <div className={`text-center p-4 border rounded-lg ${getScoreClass(businessHealth.finance.score)}`}>
+                  <DollarSign className="h-8 w-8 mx-auto mb-2" />
                   <div className="font-medium">Finance (CFO)</div>
                   <div className="text-2xl font-bold">{businessHealth.finance.score}</div>
-                  <Badge variant="default" className="mt-1">
-                    {businessHealth.finance.status}
+                  <Badge className={`mt-1 score-badge-${getScoreLabel(businessHealth.finance.score).toLowerCase()}`}>
+                    {getScoreLabel(businessHealth.finance.score)}
                   </Badge>
-                  <div className="text-sm text-green-600 mt-1">{businessHealth.finance.trend}</div>
+                  <div className="text-sm mt-1">{businessHealth.finance.trend}</div>
                 </div>
 
-                <div className="text-center p-4 border rounded-lg">
-                  <TrendingUp className="h-8 w-8 text-primary mx-auto mb-2" />
+                <div className={`text-center p-4 border rounded-lg ${getScoreClass(businessHealth.marketing.score)}`}>
+                  <TrendingUp className="h-8 w-8 mx-auto mb-2" />
                   <div className="font-medium">Marketing (CMO)</div>
                   <div className="text-2xl font-bold">{businessHealth.marketing.score}</div>
-                  <Badge variant="default" className="mt-1">
-                    {businessHealth.marketing.status}
+                  <Badge className={`mt-1 score-badge-${getScoreLabel(businessHealth.marketing.score).toLowerCase()}`}>
+                    {getScoreLabel(businessHealth.marketing.score)}
                   </Badge>
-                  <div className="text-sm text-green-600 mt-1">{businessHealth.marketing.trend}</div>
+                  <div className="text-sm mt-1">{businessHealth.marketing.trend}</div>
                 </div>
 
-                <div className="text-center p-4 border rounded-lg">
-                  <Users className="h-8 w-8 text-primary mx-auto mb-2" />
+                <div className={`text-center p-4 border rounded-lg ${getScoreClass(businessHealth.operations.score)}`}>
+                  <Users className="h-8 w-8 mx-auto mb-2" />
                   <div className="font-medium">Operations (COO)</div>
                   <div className="text-2xl font-bold">{businessHealth.operations.score}</div>
-                  <Badge variant="default" className="mt-1">
-                    {businessHealth.operations.status}
+                  <Badge className={`mt-1 score-badge-${getScoreLabel(businessHealth.operations.score).toLowerCase()}`}>
+                    {getScoreLabel(businessHealth.operations.score)}
                   </Badge>
-                  <div className="text-sm text-green-600 mt-1">{businessHealth.operations.trend}</div>
+                  <div className="text-sm mt-1">{businessHealth.operations.trend}</div>
                 </div>
               </div>
             </div>

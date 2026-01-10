@@ -403,7 +403,7 @@ export function LoanCalculator() {
                   </div>
                   <div className="text-xs text-muted-foreground">{lowestEMILoan?.bank || "-"}</div>
                 </div>
-                <div className="space-y-1 p-4 rounded-lg bg-orange-50 dark:bg-orange-950">
+                <div className="space-y-1 p-4 rounded-lg bg-cyan-50 dark:bg-cyan-950">
                   <div className="text-sm text-muted-foreground">Best Interest Rate</div>
                   <div className="text-2xl font-bold">{bestRateLoan?.rate}%</div>
                   <div className="text-xs text-muted-foreground">{bestRateLoan?.bank}</div>

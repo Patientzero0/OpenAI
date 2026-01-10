@@ -139,6 +139,14 @@ export function MarketingDashboard() {
   const [generatedImage, setGeneratedImage] = useState("")
   const [isGeneratingImage, setIsGeneratingImage] = useState(false)
 
+  // Campaign generation inputs
+  const [campaignAudience, setCampaignAudience] = useState("")
+  const [campaignTone, setCampaignTone] = useState("")
+  const [campaignBudget, setCampaignBudget] = useState("")
+  const [generatedCampaigns, setGeneratedCampaigns] = useState<any[]>(campaignSuggestions)
+  const [isGeneratingCampaigns, setIsGeneratingCampaigns] = useState(false)
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
+
   // AI Marketing Insights State
   const [marketingInsight, setMarketingInsight] = useState("")
   const [isLoadingInsight, setIsLoadingInsight] = useState(false)
@@ -601,32 +609,97 @@ export function MarketingDashboard() {
               <Brain className="h-5 w-5 text-primary" />
               <span>AI Campaign Suggestions</span>
             </CardTitle>
-            <CardDescription>Personalized content recommendations</CardDescription>
+            <CardDescription>Personalized content recommendations (powered by AI)</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {campaignSuggestions.map((suggestion, index) => (
-                <div key={index} className="p-4 border rounded-lg bg-muted/30">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center space-x-2">
-                      {suggestion.type === "WhatsApp" && <MessageCircle className="h-4 w-4 text-green-600" />}
-                      {suggestion.type === "Instagram" && <Instagram className="h-4 w-4 text-pink-600" />}
-                      {suggestion.type === "Facebook" && <Share2 className="h-4 w-4 text-blue-600" />}
-                      <span className="font-medium text-sm">{suggestion.title}</span>
-                    </div>
-                    <Badge variant={suggestion.engagement === "High" ? "default" : "secondary"}>
-                      {suggestion.engagement}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-3">{suggestion.content}</p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">Est. reach: {suggestion.estimatedReach}</span>
-                    <Button size="sm" variant="outline">
-                      Use Template
-                    </Button>
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Audience</Label>
+                  <Input placeholder="e.g., young professionals in Mumbai" value={campaignAudience} onChange={(e) => setCampaignAudience(e.target.value)} />
                 </div>
-              ))}
+                <div className="space-y-2">
+                  <Label>Tone</Label>
+                  <Input placeholder="e.g., friendly, aspirational" value={campaignTone} onChange={(e) => setCampaignTone(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Budget</Label>
+                  <Input placeholder="e.g., 50,000 INR" value={campaignBudget} onChange={(e) => setCampaignBudget(e.target.value)} />
+                </div>
+                <div className="flex items-end">
+                  <Button className="w-full" onClick={async () => {
+                    setIsGeneratingCampaigns(true)
+                    setGeneratedCampaigns([])
+                    try {
+                      const res = await fetch('/api/generate-campaign-suggestions', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          platform: selectedPlatform || 'whatsapp',
+                          product_name: productName,
+                          audience: campaignAudience,
+                          tone: campaignTone,
+                          budget: campaignBudget,
+                          number_of_suggestions: 3,
+                        }),
+                      })
+
+                      if (res.ok) {
+                        const json = await res.json()
+                        if (json.suggestions && Array.isArray(json.suggestions)) {
+                          setGeneratedCampaigns(json.suggestions)
+                        } else {
+                          setGeneratedCampaigns(campaignSuggestions)
+                        }
+                      } else {
+                        setGeneratedCampaigns(campaignSuggestions)
+                      }
+                    } catch (err) {
+                      console.warn('Campaign generation failed, using defaults', err)
+                      setGeneratedCampaigns(campaignSuggestions)
+                    } finally {
+                      setIsGeneratingCampaigns(false)
+                    }
+                  }}>
+                    {isGeneratingCampaigns ? 'Generating...' : 'Generate Campaigns'}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {(generatedCampaigns || []).map((suggestion, index) => (
+                  <div key={index} className="p-4 border rounded-lg bg-muted/30">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center space-x-2">
+                        {suggestion.type === 'whatsapp' && <MessageCircle className="h-4 w-4 text-green-600" />}
+                        {suggestion.type === 'instagram' && <Instagram className="h-4 w-4 text-cyan-600" />}
+                        {suggestion.type === 'facebook' && <Share2 className="h-4 w-4 text-blue-600" />}
+                        <span className="font-medium text-sm">{suggestion.title}</span>
+                      </div>
+                      <Badge variant={(suggestion.engagement || '').toLowerCase() === 'high' ? 'default' : 'secondary'}>
+                        {suggestion.engagement}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-3">{suggestion.content}</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Est. reach: {suggestion.estimatedReach}</span>
+                      <div className="flex items-center space-x-2">
+                        <Button size="sm" variant="outline" onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(suggestion.content)
+                            setCopiedIndex(index)
+                            setTimeout(() => setCopiedIndex(null), 2000)
+                          } catch (e) {
+                            console.error('Copy failed', e)
+                          }
+                        }}>
+                          {copiedIndex === index ? 'Copied' : 'Use Template'}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </CardContent>
         </Card>

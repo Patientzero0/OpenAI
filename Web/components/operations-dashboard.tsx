@@ -129,7 +129,6 @@ export function OperationsDashboard() {
   const [editInventoryValues, setEditInventoryValues] = useState<{
     [key: number]: { current: number; maximum: number }
   }>({})
-
   // --- Employee State ---
   const [employees, setEmployees] = useState(employeeData)
   const [editingEmployeeId, setEditingEmployeeId] = useState<number | null>(null)
@@ -137,13 +136,30 @@ export function OperationsDashboard() {
     [key: number]: { status: string; hours: number }
   }>({})
 
+  // Add stock inline form state
+  const [showAddStock, setShowAddStock] = useState(false)
+  const [newStock, setNewStock] = useState({ category: "", current: 0, minimum: 0, maximum: 0 })
+
+  // Suppliers state
+  const [suppliers, setSuppliers] = useState(supplierPerformance)
+  const [showAddSupplier, setShowAddSupplier] = useState(false)
+  const [newSupplier, setNewSupplier] = useState({ name: "", reliability: 90, avgDelay: 1, totalOrders: 0, onTime: 0 })
+
+  // Add staff form
+  const [showAddStaff, setShowAddStaff] = useState(false)
+  const [newStaff, setNewStaff] = useState({ name: "", role: "", status: "present", shift: "Morning", hours: 8 })
+
   const totalInventoryValue = 2850000
   const lowStockItems = inventory.filter((item) => item.status === "low" || item.status === "critical").length
   const avgSupplierReliability = Math.round(
-    supplierPerformance.reduce((acc, supplier) => acc + supplier.reliability, 0) / supplierPerformance.length,
+    suppliers.reduce((acc, supplier) => acc + supplier.reliability, 0) / suppliers.length,
   )
   const presentEmployees = employees.filter((emp) => emp.status === "present").length
   const totalEmployees = employees.length
+
+  // Alerts state
+  const [alerts, setAlerts] = useState(recentAlerts)
+  const [handlingAlertId, setHandlingAlertId] = useState<number | null>(null)
 
   // --- AI Operations Insights State ---
   const [operationsInsight, setOperationsInsight] = useState("");
@@ -232,6 +248,34 @@ export function OperationsDashboard() {
     setEditingEmployeeId(null)
   }
 
+  // Handle alert action via backend (Grok or fallback)
+  const handleAlertAction = async (alertId: number) => {
+    const alert = alerts.find((a) => a.id === alertId)
+    if (!alert) return
+    setHandlingAlertId(alertId)
+    try {
+      const res = await fetch('/api/handle-alert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ alert }),
+      })
+      if (res.ok) {
+        const json = await res.json()
+        if (json.resolved) {
+          setAlerts((prev) => prev.filter((a) => a.id !== alertId))
+        } else {
+          setAlerts((prev) => prev.map((a) => (a.id === alertId ? { ...a, action: json.result } : a)))
+        }
+      } else {
+        console.warn('Alert handler returned non-OK')
+      }
+    } catch (e) {
+      console.error('Failed to handle alert', e)
+    } finally {
+      setHandlingAlertId(null)
+    }
+  }
+
   useEffect(() => {
     const fetchInitialInsight = async () => {
       setIsLoadingInsight(true);
@@ -242,11 +286,11 @@ export function OperationsDashboard() {
           body: JSON.stringify({
             data: {
               inventoryData: inventory,
-              supplierPerformance,
+              supplierPerformance: suppliers,
               employeeData: employees,
               monthlyOperations,
               deliveryStatus,
-              recentAlerts,
+              recentAlerts: alerts,
             },
             question: insightQuestion,
           }),
@@ -347,15 +391,46 @@ export function OperationsDashboard() {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             Inventory Status
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => setShowAddStock(!showAddStock)}>
               <Package className="h-4 w-4 mr-2" />
-              Manage Stock
+              {showAddStock ? "Cancel" : "Add Stock"}
             </Button>
           </CardTitle>
           <CardDescription>Current stock levels across product categories</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
+            {showAddStock && (
+              <div className="p-3 border rounded-lg bg-muted/20">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">Category</Label>
+                    <Input value={newStock.category} onChange={(e) => setNewStock({ ...newStock, category: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Current Units</Label>
+                    <Input type="number" value={newStock.current} onChange={(e) => setNewStock({ ...newStock, current: parseInt(e.target.value || '0') })} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Minimum</Label>
+                    <Input type="number" value={newStock.minimum} onChange={(e) => setNewStock({ ...newStock, minimum: parseInt(e.target.value || '0') })} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Maximum</Label>
+                    <Input type="number" value={newStock.maximum} onChange={(e) => setNewStock({ ...newStock, maximum: parseInt(e.target.value || '0') })} />
+                  </div>
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <Button onClick={() => {
+                    const status = newStock.current >= newStock.minimum * 1.5 ? 'good' : newStock.current >= newStock.minimum ? 'low' : 'critical'
+                    setInventory((prev) => [...prev, { category: newStock.category || 'New', current: newStock.current, minimum: newStock.minimum, maximum: newStock.maximum, status }])
+                    setNewStock({ category: "", current: 0, minimum: 0, maximum: 0 })
+                    setShowAddStock(false)
+                  }}>Save</Button>
+                  <Button variant="outline" onClick={() => setShowAddStock(false)}>Cancel</Button>
+                </div>
+              </div>
+            )}
             {inventory.map((item, index) => (
               <div key={index} className="space-y-2 p-3 border rounded-lg">
                 <div className="flex items-center justify-between">
@@ -530,16 +605,46 @@ export function OperationsDashboard() {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               Supplier Performance
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={() => setShowAddSupplier(!showAddSupplier)}>
                 <Truck className="h-4 w-4 mr-2" />
-                Manage Suppliers
+                {showAddSupplier ? "Cancel" : "Add Supplier"}
               </Button>
             </CardTitle>
             <CardDescription>Reliability scores and delivery performance</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {supplierPerformance.map((supplier, index) => (
+              {showAddSupplier && (
+                <div className="p-3 border rounded-lg bg-muted/20">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs">Name</Label>
+                      <Input value={newSupplier.name} onChange={(e) => setNewSupplier({ ...newSupplier, name: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Reliability %</Label>
+                      <Input type="number" value={newSupplier.reliability} onChange={(e) => setNewSupplier({ ...newSupplier, reliability: parseInt(e.target.value || '0') })} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Avg Delay (days)</Label>
+                      <Input type="number" value={newSupplier.avgDelay} onChange={(e) => setNewSupplier({ ...newSupplier, avgDelay: parseFloat(e.target.value || '0') })} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Total Orders</Label>
+                      <Input type="number" value={newSupplier.totalOrders} onChange={(e) => setNewSupplier({ ...newSupplier, totalOrders: parseInt(e.target.value || '0') })} />
+                    </div>
+                  </div>
+                  <div className="mt-3 flex gap-2">
+                    <Button onClick={() => {
+                      setSuppliers((prev) => [...prev, { ...newSupplier }])
+                      setNewSupplier({ name: "", reliability: 90, avgDelay: 1, totalOrders: 0, onTime: 0 })
+                      setShowAddSupplier(false)
+                    }}>Save</Button>
+                    <Button variant="outline" onClick={() => setShowAddSupplier(false)}>Cancel</Button>
+                  </div>
+                </div>
+              )}
+              {suppliers.map((supplier, index) => (
                 <div key={index} className={`p-3 border rounded-lg ${supplier.avgDelay > 2 ? 'border-red-300 bg-red-50 dark:bg-red-950' : ''}`}>
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
@@ -593,15 +698,45 @@ export function OperationsDashboard() {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               Employee Tracking
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={() => setShowAddStaff(!showAddStaff)}>
                 <Users className="h-4 w-4 mr-2" />
-                Manage Staff
+                {showAddStaff ? "Cancel" : "Add Staff"}
               </Button>
             </CardTitle>
             <CardDescription>Current shift status and attendance</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
+              {showAddStaff && (
+                <div className="p-3 border rounded-lg bg-muted/20">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs">Name</Label>
+                      <Input value={newStaff.name} onChange={(e) => setNewStaff({ ...newStaff, name: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Role</Label>
+                      <Input value={newStaff.role} onChange={(e) => setNewStaff({ ...newStaff, role: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Shift</Label>
+                      <Input value={newStaff.shift} onChange={(e) => setNewStaff({ ...newStaff, shift: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Hours</Label>
+                      <Input type="number" value={newStaff.hours} onChange={(e) => setNewStaff({ ...newStaff, hours: parseFloat(e.target.value || '0') })} />
+                    </div>
+                  </div>
+                  <div className="mt-3 flex gap-2">
+                    <Button onClick={() => {
+                      setEmployees((prev) => [...prev, { ...newStaff } as any])
+                      setNewStaff({ name: "", role: "", status: "present", shift: "Morning", hours: 8 })
+                      setShowAddStaff(false)
+                    }}>Save</Button>
+                    <Button variant="outline" onClick={() => setShowAddStaff(false)}>Cancel</Button>
+                  </div>
+                </div>
+              )}
               {employees.map((employee, index) => (
                 <div key={index} className="p-3 border rounded-lg">
                   {editingEmployeeId === index ? (
@@ -723,13 +858,13 @@ export function OperationsDashboard() {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             Recent Alerts & Notifications
-            <Badge variant="outline">{recentAlerts.length} active</Badge>
+            <Badge variant="outline">{alerts.length} active</Badge>
           </CardTitle>
           <CardDescription>Important operational updates requiring attention</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {recentAlerts.map((alert) => (
+            {alerts.map((alert) => (
               <div
                 key={alert.id}
                 className={`p-3 border rounded-lg ${
@@ -764,8 +899,8 @@ export function OperationsDashboard() {
                       </div>
                     </div>
                   </div>
-                  <Button size="sm" variant="outline">
-                    {alert.action}
+                  <Button size="sm" variant="outline" onClick={() => handleAlertAction(alert.id)}>
+                    {handlingAlertId === alert.id ? 'Processing...' : alert.action}
                   </Button>
                 </div>
               </div>

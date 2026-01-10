@@ -153,12 +153,95 @@ async def get_bank_loan_rates():
     
     return {"banks": banks}
 
+
+class CampaignRequest(BaseModel):
+    platform: str | None = None
+    product_name: str | None = None
+    audience: str | None = None
+    tone: str | None = None
+    budget: str | None = None
+    number_of_suggestions: int | None = 3
+
+
+@app.post("/api/generate-campaign-suggestions")
+async def generate_campaign_suggestions(request: CampaignRequest):
+    """
+    Generate campaign suggestions. This implementation uses a simple templating
+    fallback. In future it can call Grok or another LLM service when configured.
+    """
+    # Basic safe defaults
+    platform = request.platform or "whatsapp"
+    product = request.product_name or "Your Product"
+    audience = request.audience or "existing customers"
+    tone = request.tone or "friendly"
+    budget = request.budget or "unspecified"
+    n = request.number_of_suggestions or 3
+
+    suggestions = []
+    for i in range(max(1, min(6, n))):
+        # Create simple variations to simulate AI output
+        title = f"{product} - Campaign Idea #{i+1}"
+        content = (
+            f"{product} {('- ' + tone) if tone else ''} campaign for {audience}. "
+            f"Platform: {platform}. Focus on a clear CTA, highlight benefits, and include a time-limited offer. "
+            f"Suggested budget: {budget}. Example copy: 'Get {product} today and enjoy exclusive savings!'")
+        engagement = "High" if i % 2 == 0 else "Medium"
+        est_reach = f"{1000 * (i + 1)}+"
+        suggestions.append({
+            "type": platform,
+            "title": title,
+            "content": content,
+            "engagement": engagement,
+            "estimatedReach": est_reach,
+        })
+
+    return {"suggestions": suggestions}
+
+
 @app.get("/health")
 async def health_check():
     """
     Health check endpoint.
     """
     return {"status": "ok"}
+
+
+@app.post("/api/handle-alert")
+async def handle_alert(request: dict):
+    """
+    Handle a single alert. This will call Grok or fallback to templated responses.
+    Expected request: {"alert": { ... }}
+    Returns: {"result": "action taken or recommendation", "resolved": bool}
+    """
+    alert = request.get("alert") if isinstance(request, dict) else None
+    if not alert:
+        return {"result": "Invalid alert payload", "resolved": False}
+
+    # Simple templated responses (fallback). Replace with Grok call when available.
+    a_type = alert.get("type")
+    severity = alert.get("severity")
+    message = alert.get("message")
+
+    # Basic logic
+    if a_type == "inventory":
+        # Simulate reorder for inventory alerts
+        cat = message.split(" ")[0] if message else "items"
+        result = f"Placed reorder for {cat}. Notified procurement team."
+        resolved = True
+    elif a_type == "supplier":
+        result = "Contacted supplier and scheduled expedited delivery. Follow-up set for 24 hours."
+        resolved = False
+    elif a_type == "employee":
+        result = "Assigned backup staff for the shift and notified HR."
+        resolved = True
+    elif a_type == "delivery":
+        result = "Prioritized pending deliveries and re-routed available drivers."
+        resolved = False
+    else:
+        result = "Reviewed alert. Recommended action: investigate and assign owner."
+        resolved = False
+
+    return {"result": result, "resolved": resolved}
 
 if __name__ == "__main__":
     import uvicorn

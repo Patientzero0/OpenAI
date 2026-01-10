@@ -45,8 +45,8 @@ export function OverviewCharts() {
                   return [value, name]
                 }}
               />
-              <Area type="monotone" dataKey="revenue" stackId="1" stroke="#15803d" fill="#15803d" fillOpacity={0.6} />
-              <Area type="monotone" dataKey="customers" stackId="2" stroke="#84cc16" fill="#84cc16" fillOpacity={0.6} />
+              <Area type="monotone" dataKey="revenue" stackId="1" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.6} />
+              <Area type="monotone" dataKey="customers" stackId="2" stroke="#10b981" fill="#10b981" fillOpacity={0.6} />
             </AreaChart>
           </ResponsiveContainer>
         </CardContent>
@@ -68,26 +68,26 @@ export function OverviewCharts() {
               <Line
                 type="monotone"
                 dataKey="finance"
-                stroke="#15803d"
+                stroke="#3b82f6"
                 strokeWidth={3}
                 name="Finance"
-                dot={{ fill: "#15803d", strokeWidth: 2, r: 4 }}
+                dot={{ fill: "#3b82f6", strokeWidth: 2, r: 4 }}
               />
               <Line
                 type="monotone"
                 dataKey="marketing"
-                stroke="#84cc16"
+                stroke="#06b6d4"
                 strokeWidth={3}
                 name="Marketing"
-                dot={{ fill: "#84cc16", strokeWidth: 2, r: 4 }}
+                dot={{ fill: "#06b6d4", strokeWidth: 2, r: 4 }}
               />
               <Line
                 type="monotone"
                 dataKey="operations"
-                stroke="#ea580c"
+                stroke="#10b981"
                 strokeWidth={3}
                 name="Operations"
-                dot={{ fill: "#ea580c", strokeWidth: 2, r: 4 }}
+                dot={{ fill: "#10b981", strokeWidth: 2, r: 4 }}
               />
             </LineChart>
           </ResponsiveContainer>
