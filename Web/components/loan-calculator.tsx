@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { API_ENDPOINTS } from "@/lib/api-config"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -55,7 +56,7 @@ export function LoanCalculator() {
   useEffect(() => {
     const fetchBankRates = async () => {
       try {
-        const response = await fetch("http://localhost:8000/api/get-bank-loan-rates", {
+        const response = await fetch(API_ENDPOINTS.getBankLoanRates(), {
           method: "GET",
           headers: { "Content-Type": "application/json" },
         })

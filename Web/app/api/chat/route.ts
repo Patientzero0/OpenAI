@@ -1,16 +1,4 @@
 import { NextResponse } from "next/server";
-import path from "path";
-import fs from "fs";
-import dotenv from "dotenv";
-
-// 1. Manually load the .env from the /backend folder
-const backendEnvPath = path.resolve(process.cwd(), "backend/.env");
-
-if (fs.existsSync(backendEnvPath)) {
-  dotenv.config({ path: backendEnvPath });
-} else {
-  dotenv.config();
-}
 
 export async function POST(req: Request) {
   try {

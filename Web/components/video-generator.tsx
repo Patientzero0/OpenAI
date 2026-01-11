@@ -1,5 +1,6 @@
 "use client"
 
+import { API_ENDPOINTS } from "@/lib/api-config"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -44,7 +45,7 @@ export function VideoGeneratorComponent() {
 
     try {
       setStatus("Generating marketing plan...")
-      const response = await fetch("http://localhost:8000/api/generate-marketing-video", {
+      const response = await fetch(API_ENDPOINTS.generateMarketingVideo(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ brand_type: brandType }),
@@ -62,7 +63,7 @@ export function VideoGeneratorComponent() {
         setGeneratedVideo(null)
       }
     } catch (error) {
-      setError("Failed to connect to backend. Ensure the server is running on http://localhost:8000")
+      setError("Failed to connect to backend. Please check your backend configuration.")
       setStatus("")
       console.error("Error:", error)
     } finally {
@@ -75,7 +76,7 @@ export function VideoGeneratorComponent() {
 
     try {
       const videoName = generatedVideo.video_path.split("/").pop()
-      const response = await fetch(`http://localhost:8000/api/download-video/${videoName}`)
+      const response = await fetch(API_ENDPOINTS.downloadVideo(videoName))
       
       if (response.ok) {
         const blob = await response.blob()

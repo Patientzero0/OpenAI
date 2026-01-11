@@ -9,6 +9,9 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // Vercel optimizations
+  // Note: Remove 'standalone' output for Vercel (only needed for Docker)
+  // output: 'standalone', // Commented out for Vercel
 }
 
 export default nextConfig

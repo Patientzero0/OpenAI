@@ -1,0 +1,16 @@
+{
+  "buildCommand": "cd Web && npm install && npm run build",
+  "outputDirectory": "Web/.next",
+  "devCommand": "cd Web && npm run dev",
+  "installCommand": "cd Web && npm install",
+  "framework": "nextjs",
+  "rewrites": [
+    {
+      "source": "/api/backend/:path*",
+      "destination": "https://your-backend-url.com/api/:path*"
+    }
+  ],
+  "env": {
+    "NEXT_PUBLIC_BACKEND_URL": "@backend-url"
+  }
+}

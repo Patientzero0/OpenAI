@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const DEEPAI_API_KEY = "dedc7515-f29e-432c-b867-8b7f7b1e4009"; // Replace with your DeepAI API key
 const API_URL = "https://api.deepai.org/api/text2img";
 
 export async function POST(request: NextRequest) {
@@ -14,10 +13,19 @@ export async function POST(request: NextRequest) {
     const formData = new FormData();
     formData.append('text', prompt);
 
+    const apiKey = process.env.NEXT_PUBLIC_DEEPAI_API_KEY || process.env.DEEPAI_API_KEY;
+    
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: 'DeepAI API key is not configured. Please set NEXT_PUBLIC_DEEPAI_API_KEY or DEEPAI_API_KEY environment variable.' },
+        { status: 500 }
+      );
+    }
+
     const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
-            "api-key": DEEPAI_API_KEY,
+            "api-key": apiKey,
         },
         body: formData,
     })

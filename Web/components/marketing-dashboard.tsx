@@ -1,5 +1,6 @@
 "use client"
 
+import { API_ENDPOINTS } from "@/lib/api-config"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -162,7 +163,7 @@ export function MarketingDashboard() {
     setIsLoadingInsight(true)
     setMarketingInsight("")
     try {
-      const response = await fetch("http://localhost:8000/api/generate-marketing-insight", {
+      const response = await fetch(API_ENDPOINTS.generateMarketingInsight(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -193,7 +194,7 @@ export function MarketingDashboard() {
     const fetchInitialInsight = async () => {
       setIsLoadingInsight(true)
       try {
-        const response = await fetch("http://localhost:8000/api/generate-marketing-insight", {
+        const response = await fetch(API_ENDPOINTS.generateMarketingInsight(), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -636,7 +637,7 @@ export function MarketingDashboard() {
                     setIsGeneratingCampaigns(true)
                     setGeneratedCampaigns([])
                     try {
-                      const res = await fetch('http://localhost:8000/api/generate-campaign-suggestions', {
+                      const res = await fetch(API_ENDPOINTS.generateCampaignSuggestions(), {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({

@@ -267,14 +267,24 @@ async def download_video(video_name: str):
     """
     Endpoint to download a generated video.
     """
-    video_path = f"backend/marketing_videos/{video_name}"
-    if os.path.exists(video_path):
-        return FileResponse(
-            path=video_path,
-            media_type="video/mp4",
-            filename=video_name
-        )
-    return {"error": "Video not found"}
+    # Try both paths: backend/marketing_videos (for running from project root)
+    # and marketing_videos (for running from backend directory or Docker)
+    video_paths = [
+        f"backend/marketing_videos/{video_name}",
+        f"marketing_videos/{video_name}",
+        f"/app/backend/marketing_videos/{video_name}",
+        f"/app/marketing_videos/{video_name}"
+    ]
+    
+    for video_path in video_paths:
+        if os.path.exists(video_path):
+            return FileResponse(
+                path=video_path,
+                media_type="video/mp4",
+                filename=video_name
+            )
+    
+    return {"error": "Video not found", "searched_paths": video_paths}
 
 @app.get("/api/get-bank-loan-rates")
 async def get_bank_loan_rates():

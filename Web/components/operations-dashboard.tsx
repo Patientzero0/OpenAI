@@ -1,5 +1,6 @@
 "use client"
 
+import { API_ENDPOINTS } from "@/lib/api-config"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -171,7 +172,7 @@ export function OperationsDashboard() {
     setIsLoadingInsight(true);
     setOperationsInsight("");
     try {
-      const response = await fetch("http://localhost:8000/api/generate-operations-insight", {
+      const response = await fetch(API_ENDPOINTS.generateOperationsInsight(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -283,7 +284,7 @@ export function OperationsDashboard() {
     if (!alert) return
     setHandlingAlertId(alertId)
     try {
-      const res = await fetch('/api/handle-alert', {
+      const res = await fetch(API_ENDPOINTS.handleAlert(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ alert }),
@@ -309,7 +310,7 @@ export function OperationsDashboard() {
     const fetchInitialInsight = async () => {
       setIsLoadingInsight(true);
       try {
-        const response = await fetch("http://localhost:8000/api/generate-operations-insight", {
+        const response = await fetch(API_ENDPOINTS.generateOperationsInsight(), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

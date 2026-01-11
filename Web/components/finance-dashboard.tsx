@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { API_ENDPOINTS } from "@/lib/api-config"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -172,7 +173,7 @@ export function FinanceDashboard() {
     setIsLoadingInsight(true)
     setFinancialInsight("")
     try {
-      const response = await fetch("http://localhost:8000/api/generate-insight", {
+      const response = await fetch(API_ENDPOINTS.generateInsight(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -197,7 +198,7 @@ export function FinanceDashboard() {
         monthlyRevenue: whatIfRevenue,
         monthlyExpenses: whatIfExpenses,
       }
-      const response = await fetch("http://localhost:8000/api/what-if-analysis", {
+      const response = await fetch(API_ENDPOINTS.whatIfAnalysis(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -218,7 +219,7 @@ export function FinanceDashboard() {
     const fetchInitialInsight = async () => {
       setIsLoadingInsight(true)
       try {
-        const response = await fetch("http://localhost:8000/api/generate-insight", {
+        const response = await fetch(API_ENDPOINTS.generateInsight(), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

@@ -24,7 +24,17 @@ if not PEXELS_KEY:
 client = Groq(api_key=GROQ_KEY)
 
 # Create output directory
-OUTPUT_DIR = "backend/marketing_videos"
+# Use relative path that works both from project root and backend directory
+OUTPUT_DIR = os.path.join(os.getcwd(), "marketing_videos")
+# Also try backend/marketing_videos for compatibility
+if not os.path.exists(OUTPUT_DIR):
+    alt_output_dir = os.path.join(os.getcwd(), "backend", "marketing_videos")
+    if os.path.exists(alt_output_dir):
+        OUTPUT_DIR = alt_output_dir
+    else:
+        # Create marketing_videos in current directory
+        OUTPUT_DIR = "marketing_videos"
+
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(f"{OUTPUT_DIR}/temp", exist_ok=True)
 
