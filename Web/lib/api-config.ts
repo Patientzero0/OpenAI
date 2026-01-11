@@ -3,15 +3,13 @@
  * Centralized configuration for API endpoints
  */
 
-// Get backend URL from environment variable, fallback to localhost for development
+// Get backend URL from environment variable, fallback to production URL
 export const getBackendUrl = (): string => {
-  if (typeof window !== 'undefined') {
-    // Client-side: use public env var
-    return process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
-  } else {
-    // Server-side: prefer internal URL if available, otherwise public
-    return process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
-  }
+  // Production backend URL (Hugging Face Spaces)
+  const productionUrl = 'https://ankitp19-open.hf.space';
+  
+  // Use NEXT_PUBLIC_API_BASE environment variable, fallback to production URL
+  return process.env.NEXT_PUBLIC_API_BASE || productionUrl;
 };
 
 // API endpoint helpers

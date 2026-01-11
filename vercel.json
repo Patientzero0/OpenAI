@@ -7,10 +7,10 @@
   "rewrites": [
     {
       "source": "/api/backend/:path*",
-      "destination": "https://your-backend-url.com/api/:path*"
+      "destination": "https://ankitp19-open.hf.space/api/:path*"
     }
   ],
   "env": {
-    "NEXT_PUBLIC_BACKEND_URL": "@backend-url"
+    "NEXT_PUBLIC_API_BASE": "https://ankitp19-open.hf.space"
   }
 }

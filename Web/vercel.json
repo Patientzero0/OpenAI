@@ -6,7 +6,7 @@
   "rewrites": [
     {
       "source": "/api/backend/:path*",
-      "destination": "https://your-backend-url.com/api/:path*"
+      "destination": "https://ankitp19-open.hf.space/api/:path*"
     }
   ]
 }
