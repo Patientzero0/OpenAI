@@ -144,37 +144,7 @@ export default function OverviewPage() {
           </CardContent>
         </Card>
 
-        {/* Critical Alerts */}
-        {criticalAlerts.length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4 flex items-center space-x-2">
-              <AlertTriangle className="h-5 w-5 text-orange-500" />
-              <span>Critical Alerts</span>
-              <Badge variant="destructive">{criticalAlerts.length}</Badge>
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {criticalAlerts.map((alert, index) => (
-                <Alert
-                  key={index}
-                  className={`${
-                    alert.severity === "high"
-                      ? "border-red-500 bg-red-50 dark:bg-red-950"
-                      : alert.severity === "medium"
-                        ? "border-yellow-500 bg-yellow-50 dark:bg-yellow-950"
-                        : "border-blue-500 bg-blue-50 dark:bg-blue-950"
-                  }`}
-                >
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertTitle className="text-sm">{alert.module}</AlertTitle>
-                  <AlertDescription className="text-xs mb-2">{alert.message}</AlertDescription>
-                  <Button size="sm" variant="outline" className="text-xs bg-transparent">
-                    {alert.action}
-                  </Button>
-                </Alert>
-              ))}
-            </div>
-          </div>
-        )}
+        
 
         {/* Key Metrics Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
@@ -223,21 +193,11 @@ export default function OverviewPage() {
           </Card>
         </div>
 
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-          {/* Business Story - Takes 2 columns */}
-          <div className="lg:col-span-2">
-            <BusinessStoryCard />
-          </div>
+        
+          
 
-          {/* Quick Actions - Takes 1 column */}
-          <div>
-            <QuickActionsCard />
-          </div>
-        </div>
 
-        {/* Charts Section */}
-        <OverviewCharts />
+        
 
         {/* Module Quick Access */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
